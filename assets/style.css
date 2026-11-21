@@ -1039,3 +1039,27 @@ html.a11y-still .hs-dot::after,html.a11y-still .wifi i,html.a11y-still .eq i,htm
 .nf-en{margin-top:44px;font-size:.92rem;color:var(--on-dark-soft)}
 .nf-en a{color:var(--gold)}
 @media (max-width:900px){.nf .wrap{min-height:calc(100svh - 90px)}.nf-code{margin-bottom:18px}.nf-links{margin:20px 0 26px}}
+
+/* ---------- The house lights come on as you scroll (layer over the hero photo, driven by main.js) ----------
+   Garden, ground floor and upper floor light up in overlapping steps, then the
+   whole scene brightens. main.js sets each opacity every frame, smoothed. */
+.lights{position:absolute;inset:0;pointer-events:none}
+[dir="ltr"] .lights{transform:scaleX(-1)}
+.lights img{position:absolute;display:block;height:auto}
+.lights .l-off{inset:0;width:100%;height:100%}
+.lights .l-z{opacity:0}
+.no-js .lights,html.a11y-still .lights{display:none}
+
+/* ---------- Work process: a gold line fills while scrolling and lights each stage ---------- */
+.process.proc-fill{position:relative}
+.process.proc-fill li::before{color:rgba(217,196,236,.32);transition:color .6s ease}
+.process.proc-fill li.lit::before{color:var(--gold)}
+@media (min-width:860px){.process.proc-fill::after{content:"";position:absolute;top:0;inset-inline-start:0;height:1px;width:calc(var(--fill,0) * 100%);background:var(--gold)}}
+
+/* ---------- The hero holds in place while its lights come on (main.js drives the lights from this scroll) ---------- */
+.hero-pin{position:relative;background:var(--night)}
+.hero-pin>.hero-house{position:sticky;top:var(--pin-top,0px)}
+.hero-pin-room{height:140svh}
+@media (max-width:900px){.hero-pin-room{height:105svh}}
+.no-js .hero-pin-room,html.a11y-still .hero-pin-room{display:none}
+@media (prefers-reduced-motion:reduce){.hero-pin-room{display:none}.hero-pin>.hero-house{position:relative}}

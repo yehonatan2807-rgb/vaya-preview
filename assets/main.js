@@ -528,5 +528,96 @@
     dim.dispatchEvent(new Event('input'));
   })();
 
+  /* ---------- The house lights come on as you scroll ----------
+     A dark copy of the hero photo sits on top. Scrolling the first half of the
+     hero turns on the garden, the ground floor and the upper floor in
+     overlapping steps, then the whole scene brightens. The value follows the
+     scroll with easing, so it never jumps or stalls, and it runs backwards
+     when you scroll back up. Exploring the house (its points, its pictures)
+     turns everything on at once. Skipped under reduced motion. */
+  (() => {
+    const hero = document.querySelector('.hero-house');
+    const L = hero && hero.querySelector('.lights');
+    if (!L) return;
+    if (still()) { L.remove(); const r = hero.parentElement.querySelector('.hero-pin-room'); if (r) r.remove(); return; }
+    // a reload always starts at the top, in the dark, instead of jumping back to where the visitor was
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    const media = hero.querySelector('.hero-media');
+    const off = L.querySelector('.l-off'), zones = [...L.querySelectorAll('.l-z')];
+    const smooth = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+    // [from, to] in scroll progress for each zone, overlapping so the light never stands still
+    const RANGES = [[0, 0.38], [0.18, 0.6], [0.38, 0.8]];
+    let cur = -1, target = 0, locked = false, raf = 0;
+    // the hero is sticky inside .hero-pin; the empty .hero-pin-room under it is the scroll that turns the lights on,
+    // so the page does not move on until the house is fully lit. A hero taller than the screen (phones) sticks
+    // with its bottom edge on the screen's bottom edge, so nothing of it is hidden.
+    const pin = hero.parentElement, room = pin.querySelector('.hero-pin-room');
+    let pinTop = 0;
+    const layout = () => { pinTop = Math.min(0, innerHeight - hero.offsetHeight); pin.style.setProperty('--pin-top', pinTop + 'px'); };
+    const measure = () => {
+      if (locked) { target = 1; return; }
+      const p = room && room.offsetHeight ? (-pin.getBoundingClientRect().top + pinTop) / room.offsetHeight : scrollY / (media.offsetHeight * 0.5);
+      target = Math.min(1, Math.max(0, p / 0.5));      // fully lit halfway through the pinned scroll; the second half is a pause on the lit house
+      if (target >= 1) locked = true;                  // once fully lit it stays lit, until the page is reloaded
+    };
+    // After the house is fully lit the pinned scroll has no job left: remove it (once the scrolling has
+    // stopped, so a finger's momentum is never cut) and shift the scroll by the same amount, so nothing on
+    // screen moves. Scrolling back up then goes straight to the lit house, with no dead stretch.
+    let idle = 0;
+    const collapse = () => {
+      if (!room || !room.isConnected || cur < 1) return;
+      if (-pin.getBoundingClientRect().top + pinTop < room.offsetHeight) return;   // still inside the pause: keep it
+      // the target is taken before the removal: browsers may already shift the scroll on their own when
+      // content above disappears (scroll anchoring), so a relative correction could apply twice
+      const goal = Math.max(0, scrollY - room.offsetHeight);
+      room.remove();
+      pin.style.removeProperty('--pin-top');
+      scrollTo({ top: goal, behavior: 'instant' });
+      L.remove();
+    };
+    const collapseSoon = () => { clearTimeout(idle); if (locked && cur >= 1) idle = setTimeout(collapse, 220); };
+    const paint = v => {
+      zones.forEach((z, i) => { z.style.opacity = smooth(RANGES[i][0], RANGES[i][1], v).toFixed(3); });
+      L.style.opacity = (1 - smooth(0.55, 1, v)).toFixed(3);
+    };
+    const tick = () => {
+      raf = 0;
+      if (cur < 0) cur = target;                       // first paint: no animation from zero
+      cur += (target - cur) * 0.12;
+      if (Math.abs(target - cur) < 0.0015) cur = target;
+      paint(cur);
+      if (cur !== target) raf = requestAnimationFrame(tick); else collapseSoon();
+    };
+    const kick = () => { if (!L.isConnected) return; measure(); collapseSoon(); if (!raf) raf = requestAnimationFrame(tick); };
+    addEventListener('scroll', kick, { passive: true });
+    addEventListener('resize', () => { layout(); kick(); });
+    layout();
+    // anyone exploring the house sees it lit
+    const lockOn = sel => e => { if (locked || !e.target.closest(sel)) return; locked = true; kick(); };
+    const POINTS = '.hs, .hs-row, .scene-panel';
+    hero.addEventListener('pointerover', lockOn(POINTS));            // hovering a point, not just the photo
+    hero.addEventListener('focusin', lockOn(POINTS));
+    hero.addEventListener('pointerdown', lockOn(POINTS + ', [data-stage]'));
+    kick();
+  })();
+
+  /* ---------- Work process: the gold line fills as you scroll ---------- */
+  document.querySelectorAll('.process').forEach(list => {
+    const items = [...list.children];
+    list.classList.add('proc-fill');
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const vh = innerHeight, r = list.getBoundingClientRect();
+      const p = Math.min(1, Math.max(0, (vh * 0.82 - r.top) / Math.max(r.height + vh * 0.25, 1)));
+      list.style.setProperty('--fill', p.toFixed(3));
+      const row = matchMedia('(min-width:860px)').matches;   // one row: stages light with the line
+      items.forEach((li, i) => li.classList.toggle('lit', row ? p > (i + 0.3) / items.length : li.getBoundingClientRect().top < vh * 0.72));
+    };
+    addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    addEventListener('resize', update);
+    update();
+  });
+
   document.querySelectorAll('[data-year]').forEach(el => el.textContent = new Date().getFullYear());
 })();
