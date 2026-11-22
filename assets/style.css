@@ -1063,3 +1063,9 @@ html.a11y-still .hs-dot::after,html.a11y-still .wifi i,html.a11y-still .eq i,htm
 @media (max-width:900px){.hero-pin-room{height:105svh}}
 .no-js .hero-pin-room,html.a11y-still .hero-pin-room{display:none}
 @media (prefers-reduced-motion:reduce){.hero-pin-room{display:none}.hero-pin>.hero-house{position:relative}}
+
+/* phones: nothing below 12px */
+@media (max-width:640px){.label,.scroll-cue,.svc-card .num,.site-footer h2{font-size:12px}}
+
+/* phone held sideways: keep the headline on the first screen */
+@media (orientation:landscape) and (max-height:520px){.hero-house .hero-media{height:38svh;min-height:130px}.hero-house .wrap{padding-block:14px 22px}}

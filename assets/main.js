@@ -322,7 +322,7 @@
       const lines = [];
       form.querySelectorAll('input, textarea, select').forEach(inp => {
         if (!inp.name || inp.name === 'website' || !data.get(inp.name)) return;
-        const lbl = form.querySelector(`label[for="${inp.id}"]`)?.textContent.replace('*', '').trim() || inp.name;
+        const lbl = form.querySelector(`label[for="${inp.id}"]`)?.textContent.replace('*', '').trim() || (inp.name === 'topic' ? (EN ? 'Topic' : 'תחום') : inp.name);
         lines.push(`${lbl}: ${data.get(inp.name)}`);
       });
       // Delivery failed: never pretend it was sent. Offer WhatsApp (with the details filled in) and the phone.
